@@ -1,23 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Outdoor Event Activity Index</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>i9 Sports OEAI™</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>Outdoor Event Activity Index (OEAI™)</h1>
+<body class="bg-gray-100">
+  <div class="max-w-xl mx-auto p-4">
+    <header class="text-center mb-4">
+      <h1 class="text-3xl font-bold text-[#00254D]">Outdoor Event Activity Index</h1>
+      <p class="text-lg text-[#FF6A00]">i9 Sports Edition</p>
+    </header>
 
-    <div id="weather-info">
-        <p><strong>Comfort Level:</strong> <span id="comfort-message">Loading...</span></p>
-        <p>Temp: <span id="temp"></span>°F | Humidity: <span id="humidity"></span>% | Wind: <span id="wind"></span> mph | Cloud Cover: <span id="cloud"></span>%</p>
+    <div id="age-group" class="mb-4">
+      <label class="block font-semibold text-[#00254D]">Player Age Group:</label>
+      <select id="ageSelect" class="w-full p-2 border rounded">
+        <option value="13+">13+</option>
+        <option value="10-12">10–12</option>
+        <option value="7-9">7–9</option>
+        <option value="4-6">4–6</option>
+      </select>
     </div>
 
-    <div id="map" style="height: 400px;"></div>
+    <div id="weather-card" class="p-4 bg-white rounded shadow mb-4">
+      <div class="text-xl font-semibold mb-2" id="comfort-message">Loading...</div>
+      <div class="grid grid-cols-2 gap-2 text-sm">
+        <div><strong>Temp:</strong> <span id="temp">--</span>°F</div>
+        <div><strong>Humidity:</strong> <span id="humidity">--</span>%</div>
+        <div><strong>Wind:</strong> <span id="wind">--</span> mph</div>
+        <div><strong>Cloud:</strong> <span id="cloud">--</span>%</div>
+      </div>
+    </div>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <div id="map" class="h-80 rounded shadow"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
