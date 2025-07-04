@@ -1,46 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Outdoor Event Activity Index</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outdoor Event Activity Index</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-start py-6 px-4">
-  
-  <div class="w-full max-w-xl space-y-6">
-    <div class="text-center">
-      <h1 class="text-3xl font-bold text-[#00254D]">Outdoor Event Activity Index</h1>
-      <p class="text-lg text-[#FF6A00]">Yukon Bible Church | i9 Sports</p>
+<body class="bg-[#F7F7F7] text-[#003057]">
+    <div class="max-w-lg mx-auto py-6 px-4 space-y-6">
+
+        <div class="text-center">
+            <h1 class="text-4xl font-bold">Outdoor Event Activity Index</h1>
+            <p class="text-lg text-[#ED1C24]">Yukon Bible Church | i9 Sports</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-4 space-y-4">
+            <div>
+                <label class="font-semibold block mb-1">Player Age Group:</label>
+                <select id="ageSelect" class="w-full p-2 border rounded">
+                    <option value="13+">13+</option>
+                    <option value="10-12">10–12</option>
+                    <option value="7-9">7–9</option>
+                    <option value="4-6">4–6</option>
+                </select>
+            </div>
+
+            <div id="comfort-message-container" class="p-4 rounded text-white text-center text-xl font-bold">
+                <span id="comfort-message">Loading...</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-sm">
+                <div><strong>Temp:</strong> <span id="temp">--</span>°F</div>
+                <div><strong>Humidity:</strong> <span id="humidity">--</span>%</div>
+                <div><strong>Wind:</strong> <span id="wind">--</span> mph</div>
+                <div><strong>Cloud:</strong> <span id="cloud">--</span>%</div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div id="map" class="h-72"></div>
+        </div>
+
     </div>
 
-    <div class="bg-white p-4 rounded shadow space-y-3">
-      <div>
-        <label class="block font-semibold text-[#00254D] mb-1">Select Player Age Group:</label>
-        <select id="ageSelect" class="w-full p-2 border rounded">
-          <option value="13+">13+</option>
-          <option value="10-12">10–12</option>
-          <option value="7-9">7–9</option>
-          <option value="4-6">4–6</option>
-        </select>
-      </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([35.5062, -97.7668], 17);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
 
-      <div id="comfort-message-container" class="p-4 rounded text-white text-center text-xl font-bold">
-        <span id="comfort-message">Loading...</span>
-      </div>
+        fetch('/static/geo/fields.geojson')
+            .then(response => response.json())
+            .then(geoData => {
+                L.geoJSON(geoData, {
+                    style: { color: '#ED1C24', fillColor: '#FFAAAA', fillOpacity: 0.4 },
+                    onEachFeature: (feature, layer) => {
+                        layer.bindPopup(feature.properties.name);
+                    }
+                }).addTo(map);
+            });
 
-      <div class="grid grid-cols-2 gap-3 text-sm text-gray-700">
-        <div><strong>Temp:</strong> <span id="temp">--</span>°F</div>
-        <div><strong>Humidity:</strong> <span id="humidity">--</span>%</div>
-        <div><strong>Wind:</strong> <span id="wind">--</span> mph</div>
-        <div><strong>Cloud:</strong> <span id="cloud">--</span>%</div>
-      </div>
-    </div>
+        function updateWeather() {
+            const age = document.getElementById('ageSelect').value;
+            fetch(`/api/weather?age_group=${age}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('comfort-message').innerText = data.comfort_message;
+                    document.getElementById('temp').innerText = data.temp_f;
+                    document.getElementById('humidity').innerText = data.humidity;
+                    document.getElementById('wind').innerText = data.wind_speed;
+                    document.getElementById('cloud').innerText = data.cloud_cover;
 
-    <div id="map" class="h-64 rounded shadow"></div>
-  </div>
+                    const container = document.getElementById('comfort-message-container');
+                    container.className = 'p-4 rounded text-white text-center text-xl font-bold';
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+                    if (data.oeai >= 80) {
+                        container.classList.add('bg-green-600');
+                    } else if (data.oeai >= 60) {
+                        container.classList.add('bg-yellow-400', 'text-black');
+                    } else if (data.oeai >= 40) {
+                        container.classList.add('bg-orange-500');
+                    } else {
+                        container.classList.add('bg-red-600');
+                    }
+                });
+        }
+
+        document.getElementById('ageSelect').addEventListener('change', updateWeather);
+        updateWeather();
+    </script>
 </body>
 </html>
