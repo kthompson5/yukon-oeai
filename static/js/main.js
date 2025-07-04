@@ -35,15 +35,17 @@ function updateWeather() {
     document.getElementById('wind').innerText = data.wind_speed;
     document.getElementById('cloud').innerText = data.cloud_cover;
 
-    const msgEl = document.getElementById('comfort-message');
-    msgEl.className = '';
-    const score = data.oeai;
-    if (score >= 80) {
-      msgEl.classList.add('text-green-600');
-    } else if (score >= 60) {
-      msgEl.classList.add('text-yellow-600');
+    const container = document.getElementById('comfort-message-container');
+    container.className = 'p-4 rounded text-white text-center text-xl font-bold';
+
+    if (data.oeai >= 80) {
+      container.classList.add('bg-green-600');
+    } else if (data.oeai >= 60) {
+      container.classList.add('bg-yellow-500', 'text-black');
+    } else if (data.oeai >= 40) {
+      container.classList.add('bg-orange-500');
     } else {
-      msgEl.classList.add('text-red-600');
+      container.classList.add('bg-red-600');
     }
   });
 }
