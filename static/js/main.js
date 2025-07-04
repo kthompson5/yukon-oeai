@@ -20,3 +20,18 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 L.marker([35.5062, -97.7668]).addTo(map)
     .bindPopup('Yukon Bible Church')
     .openPopup();
+// Load GeoJSON Fields
+fetch('/static/geo/fields.geojson')
+    .then(response => response.json())
+    .then(geoData => {
+        L.geoJSON(geoData, {
+            onEachFeature: function (feature, layer) {
+                layer.bindPopup(feature.properties.name);
+            },
+            style: {
+                color: 'green',
+                fillColor: '#7FFF7F',
+                fillOpacity: 0.4
+            }
+        }).addTo(map);
+    });
