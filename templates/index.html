@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outdoor Event Activity Index</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+    <h1>Outdoor Event Activity Index (OEAI™)</h1>
+
+    <div id="weather-info">
+        <p><strong>Comfort Level:</strong> <span id="comfort-message">Loading...</span></p>
+        <p>Temp: <span id="temp"></span>°F | Humidity: <span id="humidity"></span>% | Wind: <span id="wind"></span> mph | Cloud Cover: <span id="cloud"></span>%</p>
+    </div>
+
+    <div id="map" style="height: 400px;"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
