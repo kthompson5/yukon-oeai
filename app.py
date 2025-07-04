@@ -1,14 +1,11 @@
 from flask import Flask, render_template, jsonify
 import requests
-import os
 
 app = Flask(__name__)
 
-# Coordinates for Yukon Bible Church\NLAT = 35.5062
+# Coordinates for Yukon Bible Church
+LAT = 35.5062
 LON = -97.7668
-
-# OpenWeatherMap API Key (use your own key from Render environment variables)
-API_KEY = os.getenv("OWM_API_KEY")
 
 # ----- OEAI Calculation -----
 def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover):
@@ -36,22 +33,30 @@ def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover):
 # ----- Weather Route -----
 @app.route("/api/weather")
 def get_weather():
-    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={LAT}&lon={LON}&units=imperial&appid={API_KEY}"
+    url = (
+        f"https://api.open-meteo.com/v1/forecast"
+        f"?latitude={LAT}&longitude={LON}"
+        f"&hourly=temperature_2m,relativehumidity_2m,windspeed_10m,cloudcover"
+        f"&current_weather=true"
+    )
     res = requests.get(url)
     data = res.json()
 
-    current = data.get("current", {})
+    current = data.get("current_weather", {})
+    hourly = data.get("hourly", {})
 
-    temp_f = current.get("temp")
-    humidity = current.get("humidity")
-    wind_speed = current.get("wind_speed")
-    heat_index = temp_f  # Placeholder; OpenWeatherMap doesn't give heat index directly
-    cloud_cover = current.get("clouds")
+    temp_c = current.get("temperature", 0)
+    temp_f = temp_c * 9/5 + 32
+    wind_speed = current.get("windspeed", 0)
+    cloud_cover = hourly.get("cloudcover", [0])[0] if hourly.get("cloudcover") else 0
+    humidity = hourly.get("relativehumidity_2m", [0])[0] if hourly.get("relativehumidity_2m") else 50
+
+    heat_index = temp_f  # Placeholder; actual heat index can be calculated later
 
     score, message = calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover)
 
     return jsonify({
-        "temp_f": temp_f,
+        "temp_f": round(temp_f, 1),
         "humidity": humidity,
         "wind_speed": wind_speed,
         "cloud_cover": cloud_cover,
