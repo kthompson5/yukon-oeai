@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import requests
 
 app = Flask(__name__)
@@ -7,9 +7,9 @@ app = Flask(__name__)
 LAT = 35.5062
 LON = -97.7668
 
-# ----- OEAI Calculation -----
-def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover):
-    # Example weighted formula
+# ----- OEAI Calculation with Age Adjustment -----
+def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover, age_group):
+    # Base score calculation
     score = (
         (100 - abs(75 - temp_f)) * 0.3 +
         (100 - humidity) * 0.2 +
@@ -17,8 +17,21 @@ def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover):
         (100 - abs(80 - heat_index)) * 0.3 +
         (100 - cloud_cover) * 0.05
     )
+
+    # Age group adjustment
+    age_modifiers = {
+        "4-6": -15,
+        "7-9": -10,
+        "10-12": -5,
+        "13+": 0
+    }
+    adjustment = age_modifiers.get(age_group, 0)
+    score += adjustment
+
+    # Clamp score
     score = max(0, min(100, score))
 
+    # Comfort message
     if score >= 80:
         message = "Perfect for play! Mild temps and light breeze."
     elif score >= 60:
@@ -33,6 +46,9 @@ def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover):
 # ----- Weather Route -----
 @app.route("/api/weather")
 def get_weather():
+    # Get age group from query params
+    age_group = request.args.get("age_group", "13+")
+
     url = (
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={LAT}&longitude={LON}"
@@ -53,7 +69,7 @@ def get_weather():
 
     heat_index = temp_f  # Placeholder; actual heat index can be calculated later
 
-    score, message = calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover)
+    score, message = calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover, age_group)
 
     return jsonify({
         "temp_f": round(temp_f, 1),
