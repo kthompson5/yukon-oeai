@@ -97,3 +97,8 @@ def home():
 
 if __name__ == "__main__":
     app.run(debug=True)
+    
+# ----- Game Day Forecast Page -----
+@app.route("/gameday")
+def gameday():
+    return render_template("gameday.html")
