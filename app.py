@@ -7,7 +7,7 @@ app = Flask(__name__)
 LAT = 35.5062
 LON = -97.7668
 
-# ----- OEAI Calculation with Age Adjustment and Risk Labels -----
+# ----- OEAI Calculation with Age Adjustment and Updated Risk Labels -----
 def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover, age_group):
     # Base score calculation
     score = (
@@ -34,16 +34,16 @@ def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover, age_gr
     # Comfort message & risk level
     if score >= 80:
         message = "Perfect for play! Mild temps and light breeze."
-        risk = "GO"
+        risk = "GOOD TO GO"
     elif score >= 60:
         message = "Good weather. Hydrate and watch for sunburn."
-        risk = "GO"
+        risk = "GOOD TO GO"
     elif score >= 40:
         message = "Warm. Take shade breaks and hydrate regularly."
-        risk = "CAUTION"
+        risk = "CAUTION — TAKE PRECAUTIONS"
     else:
-        message = "Too hot for safe play. Limit outdoor activity."
-        risk = "DELAY"
+        message = "Too hot for safe play. Encourage frequent breaks and shade."
+        risk = "HIGH STRESS — MONITOR CLOSELY"
 
     return round(score), message, risk
 
@@ -95,10 +95,10 @@ def get_game_forecast():
 def home():
     return render_template("index.html")
 
-if __name__ == "__main__":
-    app.run(debug=True)
-    
 # ----- Game Day Forecast Page -----
 @app.route("/gameday")
 def gameday():
     return render_template("gameday.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)
