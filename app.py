@@ -7,7 +7,7 @@ app = Flask(__name__)
 LAT = 35.5062
 LON = -97.7668
 
-# ----- OEAI Calculation with Age Adjustment -----
+# ----- OEAI Calculation with Age Adjustment and Risk Labels -----
 def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover, age_group):
     # Base score calculation
     score = (
@@ -31,56 +31,66 @@ def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover, age_gr
     # Clamp score
     score = max(0, min(100, score))
 
-    # Comfort message
+    # Comfort message & risk level
     if score >= 80:
         message = "Perfect for play! Mild temps and light breeze."
+        risk = "GO"
     elif score >= 60:
         message = "Good weather. Hydrate and watch for sunburn."
+        risk = "GO"
     elif score >= 40:
         message = "Warm. Take shade breaks and hydrate regularly."
+        risk = "CAUTION"
     else:
         message = "Too hot for safe play. Limit outdoor activity."
+        risk = "DELAY"
 
-    return round(score), message
+    return round(score), message, risk
 
-# ----- Weather Route -----
-@app.route("/api/weather")
-def get_weather():
-    # Get age group from query params
+# ----- Hour-Specific Weather Forecast Route -----
+@app.route("/api/game-forecast")
+def get_game_forecast():
     age_group = request.args.get("age_group", "13+")
+    hour = int(request.args.get("hour", 10))  # default 10 AM
 
     url = (
         f"https://api.open-meteo.com/v1/forecast"
         f"?latitude={LAT}&longitude={LON}"
         f"&hourly=temperature_2m,relativehumidity_2m,windspeed_10m,cloudcover"
         f"&current_weather=true"
+        f"&timezone=America/Chicago"
     )
     res = requests.get(url)
     data = res.json()
 
-    current = data.get("current_weather", {})
     hourly = data.get("hourly", {})
 
-    temp_c = current.get("temperature", 0)
+    # Pull the weather for the requested hour
+    try:
+        temp_c = hourly.get("temperature_2m", [])[hour]
+        humidity = hourly.get("relativehumidity_2m", [])[hour]
+        wind_speed = hourly.get("windspeed_10m", [])[hour]
+        cloud_cover = hourly.get("cloudcover", [])[hour]
+    except (IndexError, TypeError):
+        return jsonify({"error": "Invalid hour or missing forecast data."}), 400
+
     temp_f = temp_c * 9/5 + 32
-    wind_speed = current.get("windspeed", 0)
-    cloud_cover = hourly.get("cloudcover", [0])[0] if hourly.get("cloudcover") else 0
-    humidity = hourly.get("relativehumidity_2m", [0])[0] if hourly.get("relativehumidity_2m") else 50
+    heat_index = temp_f  # placeholder
 
-    heat_index = temp_f  # Placeholder; actual heat index can be calculated later
-
-    score, message = calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover, age_group)
+    score, message, risk = calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover, age_group)
 
     return jsonify({
+        "hour": hour,
         "temp_f": round(temp_f, 1),
         "humidity": humidity,
         "wind_speed": wind_speed,
         "cloud_cover": cloud_cover,
         "oeai": score,
-        "comfort_message": message
+        "comfort_message": message,
+        "risk_level": risk
     })
 
-# ----- Frontend Route -----
+# ----- Home Route -----
 @app.route("/")
 def home():
     return render_template("index.html")
