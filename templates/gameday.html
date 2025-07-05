@@ -25,21 +25,30 @@
       fetch(`/api/game-forecast?age_group=${game.age}&hour=${game.time}`)
         .then(res => res.json())
         .then(data => {
-          const color = data.risk_level === 'GO' ? 'green-600'
-                        : data.risk_level === 'CAUTION' ? 'yellow-400 text-black'
-                        : 'red-600';
+          let bgColor;
+          if (data.risk_level.includes("GOOD TO GO")) {
+            bgColor = 'bg-green-600';
+          } else if (data.risk_level.includes("CAUTION")) {
+            bgColor = 'bg-yellow-400 text-black';
+          } else {
+            bgColor = 'bg-red-600';
+          }
 
           const gameBlock = `
             <div class="bg-white p-4 rounded shadow">
-              <div class="font-bold text-lg mb-1">${game.sport} - ${game.age}U @ ${game.time}:00 (${game.field})</div>
-              <div class="text-white px-2 py-1 inline-block rounded bg-${color}">
-                ${data.risk_level}: ${data.comfort_message}
+              <div class="font-bold text-lg mb-2">${game.sport} - ${game.age}U @ ${game.time}:00 (${game.field})</div>
+              <div class="${bgColor} text-white px-3 py-2 rounded mb-2 inline-block">
+                ${data.risk_level}
               </div>
-              <div class="text-sm text-gray-700 mt-1">
+              <div class="text-sm text-gray-700 mb-1">
+                ${data.comfort_message}
+              </div>
+              <div class="text-sm text-gray-600">
                 Temp: ${data.temp_f}°F, Humidity: ${data.humidity}%, Wind: ${data.wind_speed} mph
               </div>
             </div>
           `;
+
           container.innerHTML += gameBlock;
         });
     });
