@@ -1,57 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Game Day Forecast</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-[#F7F7F7] text-[#003057] py-6 px-4">
-  <h1 class="text-3xl font-bold mb-4 text-center">Game Day Forecast</h1>
+from flask import Flask, render_template, jsonify, request
+import requests
 
-  <div id="games-container" class="space-y-4"></div>
+app = Flask(__name__)
 
-  <script>
-    const games = [
-      { time: 9, age: '7-9', sport: 'Soccer', field: 'Field 1' },
-      { time: 10, age: '10-12', sport: 'Flag Football', field: 'Field 2' },
-      { time: 12, age: '4-6', sport: 'T-Ball', field: 'Field 3' },
-      { time: 14, age: '13+', sport: 'Soccer', field: 'Field 1' },
-    ];
+# Coordinates for Yukon Bible Church
+LAT = 35.5062
+LON = -97.7668
 
-    const container = document.getElementById('games-container');
+# ----- OEAI Calculation with Age Adjustment and Updated Risk Labels -----
+def calculate_oeai(temp_f, humidity, wind_speed, heat_index, cloud_cover, age_group):
+    # Base score calculation
+    score = (
+        (100 - abs(75 - temp_f)) * 0.3 +
+        (100 - humidity) * 0.2 +
+        (20 - wind_speed) * 5 * 0.15 +
+        (100 - abs(80 - heat_index)) * 0.3 +
+        (100 - cloud_cover) * 0.05
+    )
 
-    games.forEach(game => {
-      fetch(`/api/game-forecast?age_group=${game.age}&hour=${game.time}`)
-        .then(res => res.json())
-        .then(data => {
-          let bgColor;
-          if (data.risk_level.includes("GOOD TO GO")) {
-            bgColor = 'bg-green-600';
-          } else if (data.risk_level.includes("CAUTION")) {
-            bgColor = 'bg-yellow-400 text-black';
-          } else {
-            bgColor = 'bg-red-600';
-          }
+    # Age group adjustment
+    age_modifiers = {
+        "4-6": -15,
+        "7-9": -10,
+        "10-12": -5,
+        "13+": 0
+    }
+    adjustment = age_modifiers.get(age_group, 0)
+    score += adjustment
 
-          const gameBlock = `
-            <div class="bg-white p-4 rounded shadow">
-              <div class="font-bold text-lg mb-2">${game.sport} - ${game.age}U @ ${game.time}:00 (${game.field})</div>
-              <div class="${bgColor} text-white px-3 py-2 rounded mb-2 inline-block">
-                ${data.risk_level}
-              </div>
-              <div class="text-sm text-gray-700 mb-1">
-                ${data.comfort_message}
-              </div>
-              <div class="text-sm text-gray-600">
-                Temp: ${data.temp_f}°F, Humidity: ${data.humidity}%, Wind: ${data.wind_speed} mph
-              </div>
-            </div>
-          `;
+    # Clamp score
+    score = max(0, min(100, score))
 
-          container.innerHTML += gameBlock;
-        });
-    });
-  </script>
-</body>
-</html>
+    # Comfort message & risk level
+    if score >= 80:
+        message =
